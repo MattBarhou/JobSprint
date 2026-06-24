@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { countWords } from "@/lib/wordCount";
 
 const OUTPUT_SECTIONS = [
   {
@@ -35,8 +36,68 @@ const OUTPUT_SECTIONS = [
   },
 ];
 
-function countWords(text) {
-  return text.trim().split(/\s+/).filter(Boolean).length;
+function CopyIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="w-4 h-4 shrink-0"
+      aria-hidden="true"
+    >
+      <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+      <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="w-4 h-4 shrink-0"
+      aria-hidden="true"
+    >
+      <path d="M20 6 9 17l-5-5" />
+    </svg>
+  );
+}
+
+function CopyButton({ copied, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={copied ? "Copied to clipboard" : "Copy to clipboard"}
+      className={`inline-flex items-center justify-center gap-2 h-9 min-h-9 px-4 rounded-lg text-sm font-medium border transition-all duration-200 shrink-0 ${
+        copied
+          ? "bg-success text-success-content border-success shadow-sm"
+          : "bg-base-100 text-base-content border-base-300 hover:bg-base-200 hover:border-base-content/20"
+      }`}
+    >
+      {copied ? (
+        <>
+          <CheckIcon />
+          <span>Copied</span>
+        </>
+      ) : (
+        <>
+          <CopyIcon />
+          <span>Copy</span>
+        </>
+      )}
+    </button>
+  );
 }
 
 export default function GeneratedOutputs({ outputs }) {
@@ -52,6 +113,7 @@ export default function GeneratedOutputs({ outputs }) {
   const activeText = outputs[activeTab];
   const wordCount = countWords(activeText);
   const charCount = activeText.length;
+  const isCopied = copiedKey === activeTab;
 
   async function handleCopy(key, text) {
     try {
@@ -66,7 +128,6 @@ export default function GeneratedOutputs({ outputs }) {
   return (
     <div id="results" className="mt-14">
       <div className="border border-base-300 rounded-2xl bg-base-100 overflow-hidden">
-        {/* Panel header */}
         <div className="px-5 sm:px-6 py-4 border-b border-base-300 flex items-center justify-between gap-4">
           <div>
             <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-base-content/40 mb-0.5">
@@ -82,7 +143,6 @@ export default function GeneratedOutputs({ outputs }) {
         </div>
 
         <div className="flex flex-col lg:flex-row lg:min-h-[28rem]">
-          {/* Document list */}
           <nav
             aria-label="Output documents"
             className="lg:w-60 shrink-0 border-b lg:border-b-0 lg:border-r border-base-300 bg-base-200/40"
@@ -122,7 +182,6 @@ export default function GeneratedOutputs({ outputs }) {
             </ul>
           </nav>
 
-          {/* Document viewer */}
           <div className="flex-1 flex flex-col min-w-0">
             <div className="px-5 sm:px-6 py-3.5 border-b border-base-300 flex items-center justify-between gap-4 bg-base-100">
               <div className="min-w-0">
@@ -133,15 +192,10 @@ export default function GeneratedOutputs({ outputs }) {
                   {activeSection.description}
                 </p>
               </div>
-              <button
-                type="button"
+              <CopyButton
+                copied={isCopied}
                 onClick={() => handleCopy(activeTab, activeText)}
-                className={`btn btn-ghost btn-sm h-8 min-h-8 px-3 font-normal shrink-0 ${
-                  copiedKey === activeTab ? "text-success" : "text-base-content/70"
-                }`}
-              >
-                {copiedKey === activeTab ? "Copied" : "Copy"}
-              </button>
+              />
             </div>
 
             <div className="flex-1 px-5 sm:px-8 py-6 sm:py-8 overflow-y-auto max-h-[32rem] lg:max-h-none">

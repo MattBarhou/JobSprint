@@ -36,8 +36,8 @@ const OUTPUTS = [
 const HOW_IT_WORKS = [
   {
     step: "1",
-    title: "Paste your resume",
-    desc: "Copy text from your resume — education, projects, skills, and any work experience.",
+    title: "Upload or paste your resume",
+    desc: "Drop in a PDF or paste your resume text — education, projects, skills, and experience.",
   },
   {
     step: "2",
@@ -150,8 +150,8 @@ export default function Home() {
           </p>
           <h2 className="text-3xl font-bold mb-3">Three steps to apply smarter</h2>
           <p className="text-base-content/70 max-w-xl mx-auto">
-            No sign-up, no uploads. Just paste your info and get ready-to-send
-            application materials.
+            No sign-up required. Upload your resume PDF or paste your info, then
+            get ready-to-send application materials.
           </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

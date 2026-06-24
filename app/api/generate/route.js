@@ -1,6 +1,19 @@
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
+import {
+  formatCompanyResearchForPrompt,
+  getCompanyResearch,
+} from "@/lib/companyResearch";
+import { callOpenAI } from "@/lib/openai";
 import { buildApplicationPrompt } from "@/lib/prompts";
+import {
+  checkGenerateRateLimit,
+  getRateLimitErrorMessage,
+} from "@/lib/rateLimit";
+import {
+  buildWordCountRevisionPrompt,
+  getCoverLetterWordCountIssues,
+} from "@/lib/wordCount";
 
 const REQUIRED_FIELDS = [
   "resume",
@@ -73,6 +86,38 @@ function getOpenAIErrorMessage(error) {
   return error.message || "OpenAI request failed. Please try again later.";
 }
 
+async function reviseCoverLetterWordCounts(openai, result) {
+  const issues = getCoverLetterWordCountIssues(result);
+  if (issues.length === 0) {
+    return result;
+  }
+
+  const content = await callOpenAI(openai, [
+    {
+      role: "system",
+      content:
+        "You fix cover letter word counts precisely. Always respond with valid JSON only.",
+    },
+    {
+      role: "user",
+      content: buildWordCountRevisionPrompt(result, issues),
+    },
+  ]);
+
+  let revised;
+  try {
+    revised = JSON.parse(content);
+  } catch {
+    return result;
+  }
+
+  return {
+    ...result,
+    coverLetter250: revised.coverLetter250 || result.coverLetter250,
+    coverLetter400: revised.coverLetter400 || result.coverLetter400,
+  };
+}
+
 export async function POST(request) {
   try {
     if (!process.env.OPENAI_API_KEY) {
@@ -97,44 +142,60 @@ export async function POST(request) {
       return NextResponse.json({ error: validationError }, { status: 400 });
     }
 
+    const rateLimit = await checkGenerateRateLimit(request);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: getRateLimitErrorMessage(rateLimit.reset) },
+        {
+          status: 429,
+          headers: {
+            "X-RateLimit-Limit": String(rateLimit.limit),
+            "X-RateLimit-Remaining": String(rateLimit.remaining),
+            "X-RateLimit-Reset": String(rateLimit.reset),
+          },
+        }
+      );
+    }
+
     const { resume, jobDescription, company, jobTitle, yearsExperience, tone } =
       body;
 
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      response_format: { type: "json_object" },
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are a helpful career assistant for early-career software engineers. Always respond with valid JSON only.",
-        },
-        {
-          role: "user",
-          content: buildApplicationPrompt({
-            resume,
-            jobDescription,
-            company,
-            jobTitle,
-            yearsExperience,
-            tone,
-          }),
-        },
-      ],
-    });
+    const research = await getCompanyResearch(openai, company);
+    const companyResearch = formatCompanyResearchForPrompt(research);
 
-    const content = completion.choices[0]?.message?.content;
+    const content = await callOpenAI(openai, [
+      {
+        role: "system",
+        content:
+          "You are a helpful career assistant for early-career software engineers. Always respond with valid JSON only. Cover letter word counts are strict requirements.",
+      },
+      {
+        role: "user",
+        content: buildApplicationPrompt({
+          resume,
+          jobDescription,
+          company,
+          jobTitle,
+          yearsExperience,
+          tone,
+          companyResearch,
+        }),
+      },
+    ]);
 
-    if (!content) {
-      return NextResponse.json(
-        { error: "OpenAI returned an empty response. Please try again." },
-        { status: 502 }
-      );
+    let result = parseGeneratedContent(content);
+
+    // Retry up to 2 times if cover letter word counts are off
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const issues = getCoverLetterWordCountIssues(result);
+      if (issues.length === 0) {
+        break;
+      }
+      result = await reviseCoverLetterWordCounts(openai, result);
     }
 
-    const result = parseGeneratedContent(content);
     return NextResponse.json(result);
   } catch (error) {
     console.error("Generate API error:", error);

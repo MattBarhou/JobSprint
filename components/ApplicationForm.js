@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import GeneratedOutputs from "@/components/GeneratedOutputs";
+import ResumeUpload from "@/components/ResumeUpload";
 
 const INITIAL_FORM = {
   resumeText: "",
@@ -30,7 +31,7 @@ export default function ApplicationForm() {
   function validate() {
     const newErrors = {};
     if (!form.resumeText.trim()) {
-      newErrors.resumeText = "Please paste your resume text.";
+      newErrors.resumeText = "Please upload a PDF or paste your resume text.";
     }
     if (!form.jobDescription.trim()) {
       newErrors.jobDescription = "Please paste the job description.";
@@ -101,9 +102,9 @@ export default function ApplicationForm() {
           <h2 className="text-3xl font-bold mb-2">
             Generate your application materials
           </h2>
-          <p className="text-base-content/70 max-w-lg mx-auto">
-            Paste your resume and the job posting below. The more detail you
-            provide, the better the results.
+          <p className="text-base-content/85 max-w-lg mx-auto">
+            Upload your resume PDF or paste the text, then add the job posting.
+            The more detail you provide, the better the results.
           </p>
         </div>
 
@@ -114,57 +115,59 @@ export default function ApplicationForm() {
           <div className="card-body gap-2">
             {/* Section: Your background */}
             <div className="pb-2">
-              <h3 className="font-semibold text-base mb-1">Your background</h3>
-              <p className="text-xs text-base-content/50 mb-4">
+              <h3 className="font-semibold text-base text-base-content mb-1">
+                Your background
+              </h3>
+              <p className="text-sm text-base-content/80 mb-4">
                 Include education, projects, skills, internships, and any work
                 experience.
               </p>
 
-              <div className="form-control">
-                <label className="label py-1" htmlFor="resumeText">
-                  <span className="label-text font-semibold">Resume text</span>
-                  <span className="label-text-alt text-error">Required</span>
+              <ResumeUpload
+                resumeText={form.resumeText}
+                onResumeTextChange={(text) => {
+                  setForm((prev) => ({ ...prev, resumeText: text }));
+                  if (errors.resumeText) {
+                    setErrors((prev) => ({ ...prev, resumeText: "" }));
+                  }
+                }}
+                disabled={isGenerating}
+                hasError={Boolean(errors.resumeText)}
+              />
+              {errors.resumeText && (
+                <label className="label py-1">
+                  <span className="text-sm font-medium text-error">
+                    {errors.resumeText}
+                  </span>
                 </label>
-                <textarea
-                  id="resumeText"
-                  name="resumeText"
-                  className={`textarea textarea-bordered h-40 w-full focus:textarea-primary ${errors.resumeText ? "textarea-error" : ""}`}
-                  placeholder={`Example:\n\nJane Doe — Computer Science, University of Toronto (2026)\n\nSkills: JavaScript, React, Python, Git, SQL\n\nProjects:\n- TaskFlow: A React todo app with local storage and drag-and-drop\n- Hackathon project: Built a REST API with Node.js and PostgreSQL\n\nExperience:\n- Software Dev Intern at RBC (Summer 2025): Worked on internal tooling`}
-                  value={form.resumeText}
-                  onChange={handleChange}
-                  disabled={isGenerating}
-                />
-                {errors.resumeText && (
-                  <label className="label py-1">
-                    <span className="label-text-alt text-error">
-                      {errors.resumeText}
-                    </span>
-                  </label>
-                )}
-              </div>
+              )}
             </div>
 
             <div className="divider my-2" />
 
             {/* Section: The role */}
             <div className="pb-2">
-              <h3 className="font-semibold text-base mb-1">The role</h3>
-              <p className="text-xs text-base-content/50 mb-4">
+              <h3 className="font-semibold text-base text-base-content mb-1">
+                The role
+              </h3>
+              <p className="text-sm text-base-content/80 mb-4">
                 Copy the full job posting from LinkedIn, the company careers
                 page, or WaterlooWorks.
               </p>
 
               <div className="form-control">
                 <label className="label py-1" htmlFor="jobDescription">
-                  <span className="label-text font-semibold">
+                  <span className="label-text font-semibold text-base-content">
                     Job description
                   </span>
-                  <span className="label-text-alt text-error">Required</span>
+                  <span className="text-xs font-semibold text-error">
+                    Required
+                  </span>
                 </label>
                 <textarea
                   id="jobDescription"
                   name="jobDescription"
-                  className={`textarea textarea-bordered h-40 w-full focus:textarea-primary ${errors.jobDescription ? "textarea-error" : ""}`}
+                  className={`textarea textarea-bordered h-40 w-full text-base-content placeholder:text-base-content/45 focus:textarea-primary ${errors.jobDescription ? "textarea-error" : ""}`}
                   placeholder={`Example:\n\nSoftware Engineer Intern — Shopify\n\nWe're looking for a motivated intern to join our Backend team in Toronto.\n\nRequirements:\n- Currently enrolled in a CS or related program\n- Experience with Ruby, Python, or Go\n- Familiarity with REST APIs and databases\n\nNice to have: Open source contributions, prior internship experience`}
                   value={form.jobDescription}
                   onChange={handleChange}
@@ -172,7 +175,7 @@ export default function ApplicationForm() {
                 />
                 {errors.jobDescription && (
                   <label className="label py-1">
-                    <span className="label-text-alt text-error">
+                    <span className="text-sm font-medium text-error">
                       {errors.jobDescription}
                     </span>
                   </label>
@@ -182,16 +185,18 @@ export default function ApplicationForm() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                 <div className="form-control">
                   <label className="label py-1" htmlFor="company">
-                    <span className="label-text font-semibold">
+                    <span className="label-text font-semibold text-base-content">
                       Company name
                     </span>
-                    <span className="label-text-alt text-error">Required</span>
+                    <span className="text-xs font-semibold text-error">
+                      Required
+                    </span>
                   </label>
                   <input
                     id="company"
                     name="company"
                     type="text"
-                    className={`input input-bordered w-full focus:input-primary ${errors.company ? "input-error" : ""}`}
+                    className={`input input-bordered w-full text-base-content placeholder:text-base-content/45 focus:input-primary ${errors.company ? "input-error" : ""}`}
                     placeholder="e.g. Shopify, Google, Wealthsimple"
                     value={form.company}
                     onChange={handleChange}
@@ -199,7 +204,7 @@ export default function ApplicationForm() {
                   />
                   {errors.company && (
                     <label className="label py-1">
-                      <span className="label-text-alt text-error">
+                      <span className="text-sm font-medium text-error">
                         {errors.company}
                       </span>
                     </label>
@@ -208,14 +213,18 @@ export default function ApplicationForm() {
 
                 <div className="form-control">
                   <label className="label py-1" htmlFor="jobTitle">
-                    <span className="label-text font-semibold">Job title</span>
-                    <span className="label-text-alt text-error">Required</span>
+                    <span className="label-text font-semibold text-base-content">
+                      Job title
+                    </span>
+                    <span className="text-xs font-semibold text-error">
+                      Required
+                    </span>
                   </label>
                   <input
                     id="jobTitle"
                     name="jobTitle"
                     type="text"
-                    className={`input input-bordered w-full focus:input-primary ${errors.jobTitle ? "input-error" : ""}`}
+                    className={`input input-bordered w-full text-base-content placeholder:text-base-content/45 focus:input-primary ${errors.jobTitle ? "input-error" : ""}`}
                     placeholder="e.g. Software Engineer Intern, New Grad SWE"
                     value={form.jobTitle}
                     onChange={handleChange}
@@ -223,7 +232,7 @@ export default function ApplicationForm() {
                   />
                   {errors.jobTitle && (
                     <label className="label py-1">
-                      <span className="label-text-alt text-error">
+                      <span className="text-sm font-medium text-error">
                         {errors.jobTitle}
                       </span>
                     </label>
@@ -236,8 +245,10 @@ export default function ApplicationForm() {
 
             {/* Section: Preferences */}
             <div className="pb-2">
-              <h3 className="font-semibold text-base mb-1">Preferences</h3>
-              <p className="text-xs text-base-content/50 mb-4">
+              <h3 className="font-semibold text-base text-base-content mb-1">
+                Preferences
+              </h3>
+              <p className="text-sm text-base-content/80 mb-4">
                 Match the tone to the company culture — Big Tech for FAANG-style
                 apps, Startup for early-stage companies.
               </p>
@@ -245,14 +256,14 @@ export default function ApplicationForm() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="form-control">
                   <label className="label py-1" htmlFor="yearsExperience">
-                    <span className="label-text font-semibold">
+                    <span className="label-text font-semibold text-base-content">
                       Years of experience
                     </span>
                   </label>
                   <select
                     id="yearsExperience"
                     name="yearsExperience"
-                    className="select select-bordered w-full focus:select-primary"
+                    className="select select-bordered w-full text-base-content focus:select-primary"
                     value={form.yearsExperience}
                     onChange={handleChange}
                     disabled={isGenerating}
@@ -266,12 +277,14 @@ export default function ApplicationForm() {
 
                 <div className="form-control">
                   <label className="label py-1" htmlFor="tone">
-                    <span className="label-text font-semibold">Tone</span>
+                    <span className="label-text font-semibold text-base-content">
+                      Tone
+                    </span>
                   </label>
                   <select
                     id="tone"
                     name="tone"
-                    className="select select-bordered w-full focus:select-primary"
+                    className="select select-bordered w-full text-base-content focus:select-primary"
                     value={form.tone}
                     onChange={handleChange}
                     disabled={isGenerating}
