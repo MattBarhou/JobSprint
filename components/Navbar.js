@@ -6,7 +6,11 @@ import LetterlyLogo from "@/components/LetterlyLogo";
 
 export default function Navbar() {
   return (
-    <div className="navbar bg-base-100/80 backdrop-blur-md border-b border-base-300 sticky top-0 z-50 px-4 lg:px-8 max-w-6xl mx-auto">
+    <header className="sticky top-0 z-50 bg-base-100/80 backdrop-blur-md border-b border-base-300">
+      <nav
+        aria-label="Main navigation"
+        className="navbar px-4 lg:px-8 max-w-6xl mx-auto"
+      >
       <div className="flex-1">
         <Link href="/" className="btn btn-ghost text-xl font-bold gap-2 px-2">
           <LetterlyLogo />
@@ -61,6 +65,7 @@ export default function Navbar() {
           </div>
         </Show>
       </div>
-    </div>
+      </nav>
+    </header>
   );
 }
